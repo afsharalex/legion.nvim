@@ -1,6 +1,8 @@
 # Emissary
 
-AI-powered code editing for Neovim using Claude.
+AI-powered code editing for Neovim using Claude Code.
+
+If you use OpenCode, check out [99](https://github.com/ThePrimeagen/99) instead.
 
 ## Features
 
@@ -110,6 +112,10 @@ require("emissary").setup({
 
 - [Getting Started](docs/getting-started.md) - Learn the basics
 - [Usage Guide](docs/usage-guide.md) - Specific workflows
+
+## Inspiration
+
+This plugin was heavily inspired by ThePrimeagen's [99](https://github.com/ThePrimeagen/99), taking a slightly different approach and using Claude Code instead of OpenCode. Give his plugin a look as well.
 
 ## License
 
