@@ -1,8 +1,8 @@
 --- Wrapper around claude_agent_sdk
--- @module pear.sdk.provider
+-- @module emissary.sdk.provider
 
-local config = require("pear.config")
-local log = require("pear.log")
+local config = require("emissary.config")
+local log = require("emissary.log")
 
 local M = {}
 

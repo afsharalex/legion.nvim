@@ -1,5 +1,5 @@
 --- Global state management for concurrent operations
--- @module pear.state
+-- @module emissary.state
 
 local M = {}
 
@@ -12,7 +12,7 @@ M.nsid = nil
 --- Initialize the state module
 function M.init()
   if not M.nsid then
-    M.nsid = vim.api.nvim_create_namespace("pear")
+    M.nsid = vim.api.nvim_create_namespace("emissary")
   end
   return M.nsid
 end
@@ -85,7 +85,7 @@ end
 
 --- Debug: print all operations
 function M.debug_print()
-  vim.print("Pear operations:")
+  vim.print("Emissary operations:")
   for id, op in pairs(M.operations) do
     vim.print(string.format("  %s: buffer=%d, status=%s", id, op.bufnr or -1, op.status or "unknown"))
   end

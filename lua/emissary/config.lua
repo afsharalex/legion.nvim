@@ -1,5 +1,5 @@
---- Pear configuration defaults
--- @module pear.config
+--- Emissary configuration defaults
+-- @module emissary.config
 
 local M = {}
 
@@ -46,7 +46,7 @@ M.defaults = {
   -- Logging settings
   log = {
     level = "INFO",  -- DEBUG, INFO, WARN, ERROR
-    file = nil,      -- nil = auto (~/.local/state/nvim/pear.log)
+    file = nil,      -- nil = auto (~/.local/state/nvim/emissary.log)
   },
 }
 

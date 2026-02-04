@@ -1,7 +1,7 @@
---- Simple file logger for Pear
--- @module pear.log
+--- Simple file logger for Emissary
+-- @module emissary.log
 --
--- Log to ~/.local/state/nvim/pear.log (XDG compliant)
+-- Log to ~/.local/state/nvim/emissary.log (XDG compliant)
 -- Levels: DEBUG, INFO, WARN, ERROR
 -- Format: [TIMESTAMP] [LEVEL] [OP:id] message
 
@@ -33,7 +33,7 @@ local operation_id = nil
 -- @return string
 local function get_default_log_path()
   local state_dir = vim.fn.stdpath("state")
-  return state_dir .. "/pear.log"
+  return state_dir .. "/emissary.log"
 end
 
 --- Ensure log directory exists
@@ -62,7 +62,7 @@ local function open_log_file()
 
   local handle, err = io.open(path, "a")
   if not handle then
-    vim.notify("Pear: Failed to open log file: " .. (err or "unknown"), vim.log.levels.WARN)
+    vim.notify("Emissary: Failed to open log file: " .. (err or "unknown"), vim.log.levels.WARN)
     return nil
   end
 

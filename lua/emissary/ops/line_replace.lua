@@ -1,23 +1,23 @@
---- Visual selection replace operation
--- @module pear.ops.visual_replace
+--- Normal mode line replace operation
+-- @module emissary.ops.line_replace
 --
--- Core operation: select text -> send to Claude -> replace with result
+-- Operates on current line or a count of lines from cursor position
 
-local Operation = require("pear.core.operation")
-local geo = require("pear.geo")
-local marks = require("pear.ops.marks")
-local cleanup = require("pear.ops.cleanup")
-local provider = require("pear.sdk.provider")
-local builder = require("pear.prompt.builder")
-local status = require("pear.ui.status")
-local window = require("pear.ui.window")
-local log = require("pear.log")
-local config = require("pear.config")
-local git = require("pear.utils.git")
+local Operation = require("emissary.core.operation")
+local geo = require("emissary.geo")
+local marks = require("emissary.ops.marks")
+local cleanup = require("emissary.ops.cleanup")
+local provider = require("emissary.sdk.provider")
+local builder = require("emissary.prompt.builder")
+local status = require("emissary.ui.status")
+local window = require("emissary.ui.window")
+local log = require("emissary.log")
+local config = require("emissary.config")
+local git = require("emissary.utils.git")
 
 local M = {}
 
---- Safely convert error to string with detailed SDK error extraction
+--- Safely convert error to string
 -- @param err any
 -- @return string
 local function safe_error_string(err)
@@ -25,75 +25,13 @@ local function safe_error_string(err)
     return "Unknown error"
   end
 
-  -- Try to use SDK error type checking for better messages
-  local sdk = provider.get_sdk()
-  if sdk and type(err) == "table" then
-    -- Check for specific SDK error types
-    if sdk.is_error then
-      if sdk.ProcessError and sdk.is_error(err, sdk.ProcessError) then
-        local msg = err.message or "Process error"
-        if err.exit_code then
-          msg = msg .. " (exit code " .. tostring(err.exit_code) .. ")"
-        end
-        if err.stderr and #err.stderr > 0 then
-          local stderr_preview = err.stderr:sub(1, 200)
-          if #err.stderr > 200 then
-            stderr_preview = stderr_preview .. "..."
-          end
-          msg = msg .. "\nstderr: " .. stderr_preview
-        end
-        return msg
-      elseif sdk.CLINotFoundError and sdk.is_error(err, sdk.CLINotFoundError) then
-        return "Claude CLI not found. Install with: npm install -g @anthropic-ai/claude-code"
-      elseif sdk.CLIConnectionError and sdk.is_error(err, sdk.CLIConnectionError) then
-        return "CLI connection error: " .. (err.message or "unknown")
-      end
-    end
-  end
-
-  -- Handle our enhanced error objects (from on_exit handler)
   if type(err) == "table" then
-    local parts = {}
-
-    if err.message then
-      table.insert(parts, tostring(err.message))
-    elseif err.type == "exit" then
-      local msg = "CLI exited"
-      if err.code then
-        msg = msg .. " with code " .. tostring(err.code)
-      end
-      if err.signal then
-        msg = msg .. " (signal " .. tostring(err.signal) .. ")"
-      end
-      table.insert(parts, msg)
-    end
-
-    -- Add exit code if present and not already in message
-    if err.exit_code and not err.message then
-      table.insert(parts, "exit code " .. tostring(err.exit_code))
-    end
-
-    -- Add stderr preview if available
-    if err.stderr and #err.stderr > 0 then
-      local stderr_preview = err.stderr:sub(1, 200)
-      if #err.stderr > 200 then
-        stderr_preview = stderr_preview .. "..."
-      end
-      table.insert(parts, "stderr: " .. stderr_preview)
-    end
-
-    if #parts > 0 then
-      return table.concat(parts, "\n")
-    end
-
-    -- Fallback for table errors
     if err.message then
       return tostring(err.message)
     end
     return "Error (table)"
   end
 
-  -- Try tostring as last resort
   local ok, str = pcall(tostring, err)
   if ok then
     return str
@@ -102,10 +40,10 @@ local function safe_error_string(err)
   return "Error (" .. type(err) .. ")"
 end
 
---- Execute a visual replace operation
+--- Execute a line replace operation
 -- @param opts table Options
 -- @param opts.bufnr number Buffer number
--- @param opts.range Range The visual selection range
+-- @param opts.range Range The line range
 -- @param opts.instruction string The instruction for Claude
 -- @return Operation The created operation
 function M.execute(opts)
@@ -122,7 +60,7 @@ function M.execute(opts)
 
   -- Set operation context for logging
   log.set_operation(op.id)
-  log.info("Starting visual replace operation")
+  log.info("Starting line replace operation")
   log.debug("Instruction: " .. instruction)
 
   -- Create extmarks to track the range
@@ -134,17 +72,11 @@ function M.execute(opts)
     return op
   end
 
-  -- Get the selected text
-  local selected_text = range:get_text(bufnr)
-  if not selected_text or #selected_text == 0 then
-    log.warn("No text selected")
-    op:fail("No text selected")
-    cleanup.cleanup_operation(op)
-    log.clear_operation()
-    return op
-  end
+  -- Get the current line text (may be empty - that's okay for insertions)
+  local line_text = range:get_text(bufnr) or ""
+  local is_empty_line = #line_text == 0 or line_text:match("^%s*$")
 
-  log.debug("Selected " .. #selected_text .. " chars of text")
+  log.debug("Line text: " .. (is_empty_line and "(empty)" or #line_text .. " chars"))
 
   -- Get file context
   local filename = vim.api.nvim_buf_get_name(bufnr)
@@ -155,10 +87,11 @@ function M.execute(opts)
   -- Build prompt options
   local prompt_opts = {
     instruction = instruction,
-    selected_text = selected_text,
+    line_text = line_text,
+    is_empty_line = is_empty_line,
     filename = filename,
     filetype = filetype,
-    selection_range = {
+    line_range = {
       start_row = range.start.row,
       end_row = range.finish.row,
     },
@@ -169,12 +102,10 @@ function M.execute(opts)
     local file_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     prompt_opts.file_contents = table.concat(file_lines, "\n")
     log.debug("Including full file context: " .. #prompt_opts.file_contents .. " chars")
-  else
-    log.debug("Full file context disabled, sending selection only")
   end
 
   -- Build the prompt
-  local prompt = builder.build_replace_prompt(prompt_opts)
+  local prompt = builder.build_line_prompt(prompt_opts)
 
   -- Create status display
   op.status_display = status.create(op)
@@ -204,14 +135,7 @@ function M.execute(opts)
     prompt = prompt,
     sdk_options = { cwd = cwd },
     on_message = function(message)
-      if not op:is_active() then
-        return
-      end
-
-      local sdk = provider.get_sdk()
-      if sdk and sdk.is_assistant_message(message) then
-        -- Just keep showing "Implementing..."
-      end
+      -- Just keep showing "Implementing..."
     end,
     on_text = function(accumulated)
       if not op:is_active() then
@@ -239,7 +163,6 @@ function M.execute(opts)
       local replacement = op.accumulated_text
 
       -- Clean up the replacement text
-      -- Remove markdown code fences if present
       replacement = M.clean_response(replacement)
 
       if #replacement == 0 then
@@ -284,7 +207,7 @@ function M.execute(opts)
       do_cleanup()
       log.clear_operation()
 
-      window.notify("Pear error: " .. err_msg, vim.log.levels.ERROR)
+      window.notify("Emissary error: " .. err_msg, vim.log.levels.ERROR)
     end,
   })
 
@@ -311,7 +234,6 @@ function M.clean_response(text)
   text = vim.trim(text)
 
   -- Remove markdown code fences if the entire response is wrapped in them
-  -- Match ```language\n...\n``` or just ```\n...\n```
   local fenced = text:match("^```[^\n]*\n(.-)```$")
   if fenced then
     text = fenced
@@ -320,22 +242,68 @@ function M.clean_response(text)
   return text
 end
 
---- Start a visual replace from current visual selection
--- @param instruction string|nil Optional instruction (prompts if nil)
-function M.from_visual_selection(instruction)
-  -- Get current buffer
-  local bufnr = vim.api.nvim_get_current_buf()
+--- Create a range for line(s) starting at a given row
+-- @param bufnr number Buffer number
+-- @param start_row number 1-based starting row
+-- @param count number Number of lines
+-- @return Range
+local function create_line_range(bufnr, start_row, count)
+  local end_row = start_row + count - 1
 
-  -- Exit visual mode to set '< and '> marks
-  local esc = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
-  vim.api.nvim_feedkeys(esc, "x", false)
-
-  -- Get the visual selection range
-  local range = geo.Range.from_visual_selection()
-  if not range then
-    window.notify("No visual selection", vim.log.levels.WARN)
-    return
+  -- Clamp to buffer bounds
+  local line_count = vim.api.nvim_buf_line_count(bufnr)
+  if end_row > line_count then
+    end_row = line_count
   end
+
+  -- Get line lengths for range
+  local end_line = vim.api.nvim_buf_get_lines(bufnr, end_row - 1, end_row, false)[1] or ""
+
+  -- Ensure end_col is at least 1 (for empty lines, col=0 is invalid in 1-based system)
+  local end_col = math.max(1, #end_line)
+
+  return geo.Range.new(
+    geo.Point.new(start_row, 1),
+    geo.Point.new(end_row, end_col)
+  )
+end
+
+--- Start a line replace from a pre-captured position
+-- Use this when buffer/cursor was captured before an async operation (like vim.ui.input)
+-- @param bufnr number Buffer number
+-- @param row number 1-based row number
+-- @param count number Number of lines
+-- @param instruction string The instruction
+function M.from_position(bufnr, row, count, instruction)
+  count = count or 1
+  if count < 1 then
+    count = 1
+  end
+
+  local range = create_line_range(bufnr, row, count)
+
+  M.execute({
+    bufnr = bufnr,
+    range = range,
+    instruction = instruction,
+  })
+end
+
+--- Start a line replace from current line
+-- @param instruction string|nil Optional instruction (prompts if nil or empty)
+-- @param count number|nil Number of lines (default 1)
+function M.from_current_line(instruction, count)
+  local bufnr = vim.api.nvim_get_current_buf()
+  count = count or 1
+  if count < 1 then
+    count = 1
+  end
+
+  -- Get cursor position
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local start_row = cursor[1]  -- 1-based row
+
+  local range = create_line_range(bufnr, start_row, count)
 
   if instruction and #instruction > 0 then
     -- Execute immediately
@@ -346,8 +314,9 @@ function M.from_visual_selection(instruction)
     })
   else
     -- Prompt for instruction
+    -- Note: Capture bufnr and range before async input to avoid buffer switching issues
     window.capture_input({
-      title = "Pear Instruction",
+      title = "Emissary Line Instruction",
       callback = function(input)
         if input and #input > 0 then
           M.execute({
@@ -359,11 +328,6 @@ function M.from_visual_selection(instruction)
       end,
     })
   end
-end
-
---- Start visual replace with prompt window
-function M.with_prompt()
-  M.from_visual_selection(nil)
 end
 
 return M

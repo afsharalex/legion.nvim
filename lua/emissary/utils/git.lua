@@ -1,5 +1,5 @@
 --- Git utility functions
--- @module pear.utils.git
+-- @module emissary.utils.git
 
 local M = {}
 

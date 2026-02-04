@@ -1,5 +1,5 @@
 --- Floating window for prompts
--- @module pear.ui.window
+-- @module emissary.ui.window
 
 local M = {}
 
@@ -9,14 +9,14 @@ local M = {}
 -- @param opts.callback function(input) Called with user input or nil if cancelled
 function M.capture_input(opts)
   opts = opts or {}
-  local title = opts.title or "Pear Prompt"
+  local title = opts.title or "Emissary Prompt"
   local callback = opts.callback or function() end
 
   -- Create buffer for input
   local buf = vim.api.nvim_create_buf(false, true)
   vim.bo[buf].buftype = "nofile"
   vim.bo[buf].bufhidden = "wipe"
-  vim.bo[buf].filetype = "pear_prompt"
+  vim.bo[buf].filetype = "emissary_prompt"
 
   -- Calculate window size and position
   local width = math.min(80, vim.o.columns - 10)
@@ -41,7 +41,7 @@ function M.capture_input(opts)
   local win = vim.api.nvim_open_win(buf, true, win_opts)
 
   -- Set window highlights
-  vim.wo[win].winhl = "Normal:Normal,FloatBorder:PearPromptBorder,FloatTitle:PearPromptTitle"
+  vim.wo[win].winhl = "Normal:Normal,FloatBorder:EmiPromptBorder,FloatTitle:EmiPromptTitle"
   vim.wo[win].cursorline = false
 
   -- Enter insert mode
@@ -114,7 +114,7 @@ end
 -- @param level number|nil Vim log level (default: INFO)
 function M.notify(msg, level)
   level = level or vim.log.levels.INFO
-  vim.notify(msg, level, { title = "Pear" })
+  vim.notify(msg, level, { title = "Emissary" })
 end
 
 return M

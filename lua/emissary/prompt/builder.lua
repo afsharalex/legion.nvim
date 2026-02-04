@@ -1,5 +1,5 @@
 --- Build prompts with context
--- @module pear.prompt.builder
+-- @module emissary.prompt.builder
 
 local M = {}
 

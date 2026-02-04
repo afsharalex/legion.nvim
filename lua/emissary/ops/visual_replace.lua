@@ -1,23 +1,23 @@
---- Function implementation operation
--- @module pear.ops.implement
+--- Visual selection replace operation
+-- @module emissary.ops.visual_replace
 --
--- Select a function stub/signature and Claude implements the body
+-- Core operation: select text -> send to Claude -> replace with result
 
-local Operation = require("pear.core.operation")
-local geo = require("pear.geo")
-local marks = require("pear.ops.marks")
-local cleanup = require("pear.ops.cleanup")
-local provider = require("pear.sdk.provider")
-local builder = require("pear.prompt.builder")
-local status = require("pear.ui.status")
-local window = require("pear.ui.window")
-local log = require("pear.log")
-local config = require("pear.config")
-local git = require("pear.utils.git")
+local Operation = require("emissary.core.operation")
+local geo = require("emissary.geo")
+local marks = require("emissary.ops.marks")
+local cleanup = require("emissary.ops.cleanup")
+local provider = require("emissary.sdk.provider")
+local builder = require("emissary.prompt.builder")
+local status = require("emissary.ui.status")
+local window = require("emissary.ui.window")
+local log = require("emissary.log")
+local config = require("emissary.config")
+local git = require("emissary.utils.git")
 
 local M = {}
 
---- Safely convert error to string
+--- Safely convert error to string with detailed SDK error extraction
 -- @param err any
 -- @return string
 local function safe_error_string(err)
@@ -25,13 +25,75 @@ local function safe_error_string(err)
     return "Unknown error"
   end
 
+  -- Try to use SDK error type checking for better messages
+  local sdk = provider.get_sdk()
+  if sdk and type(err) == "table" then
+    -- Check for specific SDK error types
+    if sdk.is_error then
+      if sdk.ProcessError and sdk.is_error(err, sdk.ProcessError) then
+        local msg = err.message or "Process error"
+        if err.exit_code then
+          msg = msg .. " (exit code " .. tostring(err.exit_code) .. ")"
+        end
+        if err.stderr and #err.stderr > 0 then
+          local stderr_preview = err.stderr:sub(1, 200)
+          if #err.stderr > 200 then
+            stderr_preview = stderr_preview .. "..."
+          end
+          msg = msg .. "\nstderr: " .. stderr_preview
+        end
+        return msg
+      elseif sdk.CLINotFoundError and sdk.is_error(err, sdk.CLINotFoundError) then
+        return "Claude CLI not found. Install with: npm install -g @anthropic-ai/claude-code"
+      elseif sdk.CLIConnectionError and sdk.is_error(err, sdk.CLIConnectionError) then
+        return "CLI connection error: " .. (err.message or "unknown")
+      end
+    end
+  end
+
+  -- Handle our enhanced error objects (from on_exit handler)
   if type(err) == "table" then
+    local parts = {}
+
+    if err.message then
+      table.insert(parts, tostring(err.message))
+    elseif err.type == "exit" then
+      local msg = "CLI exited"
+      if err.code then
+        msg = msg .. " with code " .. tostring(err.code)
+      end
+      if err.signal then
+        msg = msg .. " (signal " .. tostring(err.signal) .. ")"
+      end
+      table.insert(parts, msg)
+    end
+
+    -- Add exit code if present and not already in message
+    if err.exit_code and not err.message then
+      table.insert(parts, "exit code " .. tostring(err.exit_code))
+    end
+
+    -- Add stderr preview if available
+    if err.stderr and #err.stderr > 0 then
+      local stderr_preview = err.stderr:sub(1, 200)
+      if #err.stderr > 200 then
+        stderr_preview = stderr_preview .. "..."
+      end
+      table.insert(parts, "stderr: " .. stderr_preview)
+    end
+
+    if #parts > 0 then
+      return table.concat(parts, "\n")
+    end
+
+    -- Fallback for table errors
     if err.message then
       return tostring(err.message)
     end
     return "Error (table)"
   end
 
+  -- Try tostring as last resort
   local ok, str = pcall(tostring, err)
   if ok then
     return str
@@ -40,25 +102,28 @@ local function safe_error_string(err)
   return "Error (" .. type(err) .. ")"
 end
 
---- Execute a function implementation operation
+--- Execute a visual replace operation
 -- @param opts table Options
 -- @param opts.bufnr number Buffer number
 -- @param opts.range Range The visual selection range
+-- @param opts.instruction string The instruction for Claude
 -- @return Operation The created operation
 function M.execute(opts)
   local bufnr = opts.bufnr
   local range = opts.range
+  local instruction = opts.instruction
 
   -- Create operation
   local op = Operation.new({
     bufnr = bufnr,
     range = range,
-    instruction = "Implement function",
+    instruction = instruction,
   })
 
   -- Set operation context for logging
   log.set_operation(op.id)
-  log.info("Starting function implementation operation")
+  log.info("Starting visual replace operation")
+  log.debug("Instruction: " .. instruction)
 
   -- Create extmarks to track the range
   op.marks = marks.mark_range(bufnr, range)
@@ -69,17 +134,17 @@ function M.execute(opts)
     return op
   end
 
-  -- Get the selected text (function stub)
-  local function_stub = range:get_text(bufnr)
-  if not function_stub or #function_stub == 0 then
-    log.warn("No function stub selected")
-    op:fail("No function stub selected")
+  -- Get the selected text
+  local selected_text = range:get_text(bufnr)
+  if not selected_text or #selected_text == 0 then
+    log.warn("No text selected")
+    op:fail("No text selected")
     cleanup.cleanup_operation(op)
     log.clear_operation()
     return op
   end
 
-  log.debug("Function stub: " .. #function_stub .. " chars")
+  log.debug("Selected " .. #selected_text .. " chars of text")
 
   -- Get file context
   local filename = vim.api.nvim_buf_get_name(bufnr)
@@ -89,9 +154,14 @@ function M.execute(opts)
 
   -- Build prompt options
   local prompt_opts = {
-    function_stub = function_stub,
+    instruction = instruction,
+    selected_text = selected_text,
     filename = filename,
     filetype = filetype,
+    selection_range = {
+      start_row = range.start.row,
+      end_row = range.finish.row,
+    },
   }
 
   -- Include full file contents if enabled (default: true)
@@ -99,10 +169,12 @@ function M.execute(opts)
     local file_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     prompt_opts.file_contents = table.concat(file_lines, "\n")
     log.debug("Including full file context: " .. #prompt_opts.file_contents .. " chars")
+  else
+    log.debug("Full file context disabled, sending selection only")
   end
 
   -- Build the prompt
-  local prompt = builder.build_implement_prompt(prompt_opts)
+  local prompt = builder.build_replace_prompt(prompt_opts)
 
   -- Create status display
   op.status_display = status.create(op)
@@ -164,12 +236,13 @@ function M.execute(opts)
       end
 
       -- Get the final text
-      local implementation = op.accumulated_text
+      local replacement = op.accumulated_text
 
-      -- Clean up the response text
-      implementation = M.clean_response(implementation)
+      -- Clean up the replacement text
+      -- Remove markdown code fences if present
+      replacement = M.clean_response(replacement)
 
-      if #implementation == 0 then
+      if #replacement == 0 then
         log.warn("Empty response received from Claude")
         op:fail("Empty response")
         op.status_display.complete(false)
@@ -178,18 +251,18 @@ function M.execute(opts)
         return
       end
 
-      log.info("Received " .. #implementation .. " chars, applying implementation")
+      log.info("Received " .. #replacement .. " chars, applying replacement")
 
       -- Apply the replacement
-      local success = marks.replace_text(op.marks, implementation)
+      local success = marks.replace_text(op.marks, replacement)
 
       if success then
         log.info("Operation completed successfully")
         op:complete()
         op.status_display.complete(true)
       else
-        log.error("Failed to apply implementation")
-        op:fail("Failed to apply implementation")
+        log.error("Failed to apply replacement text")
+        op:fail("Failed to apply replacement")
         op.status_display.complete(false)
       end
 
@@ -211,7 +284,7 @@ function M.execute(opts)
       do_cleanup()
       log.clear_operation()
 
-      window.notify("Pear error: " .. err_msg, vim.log.levels.ERROR)
+      window.notify("Emissary error: " .. err_msg, vim.log.levels.ERROR)
     end,
   })
 
@@ -238,6 +311,7 @@ function M.clean_response(text)
   text = vim.trim(text)
 
   -- Remove markdown code fences if the entire response is wrapped in them
+  -- Match ```language\n...\n``` or just ```\n...\n```
   local fenced = text:match("^```[^\n]*\n(.-)```$")
   if fenced then
     text = fenced
@@ -246,8 +320,9 @@ function M.clean_response(text)
   return text
 end
 
---- Start function implementation from visual selection
-function M.from_visual_selection()
+--- Start a visual replace from current visual selection
+-- @param instruction string|nil Optional instruction (prompts if nil)
+function M.from_visual_selection(instruction)
   -- Get current buffer
   local bufnr = vim.api.nvim_get_current_buf()
 
@@ -262,11 +337,33 @@ function M.from_visual_selection()
     return
   end
 
-  -- Execute immediately
-  M.execute({
-    bufnr = bufnr,
-    range = range,
-  })
+  if instruction and #instruction > 0 then
+    -- Execute immediately
+    M.execute({
+      bufnr = bufnr,
+      range = range,
+      instruction = instruction,
+    })
+  else
+    -- Prompt for instruction
+    window.capture_input({
+      title = "Emissary Instruction",
+      callback = function(input)
+        if input and #input > 0 then
+          M.execute({
+            bufnr = bufnr,
+            range = range,
+            instruction = input,
+          })
+        end
+      end,
+    })
+  end
+end
+
+--- Start visual replace with prompt window
+function M.with_prompt()
+  M.from_visual_selection(nil)
 end
 
 return M
