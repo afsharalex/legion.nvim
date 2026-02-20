@@ -1,19 +1,19 @@
 --- Visual selection replace operation
--- @module emissary.ops.visual_replace
+-- @module legion.ops.visual_replace
 --
 -- Core operation: select text -> send to Claude -> replace with result
 
-local Operation = require("emissary.core.operation")
-local geo = require("emissary.geo")
-local marks = require("emissary.ops.marks")
-local cleanup = require("emissary.ops.cleanup")
-local provider = require("emissary.sdk.provider")
-local builder = require("emissary.prompt.builder")
-local status = require("emissary.ui.status")
-local window = require("emissary.ui.window")
-local log = require("emissary.log")
-local config = require("emissary.config")
-local git = require("emissary.utils.git")
+local Operation = require("legion.core.operation")
+local geo = require("legion.geo")
+local marks = require("legion.ops.marks")
+local cleanup = require("legion.ops.cleanup")
+local provider = require("legion.sdk.provider")
+local builder = require("legion.prompt.builder")
+local status = require("legion.ui.status")
+local window = require("legion.ui.window")
+local log = require("legion.log")
+local config = require("legion.config")
+local git = require("legion.utils.git")
 
 local M = {}
 
@@ -284,7 +284,7 @@ function M.execute(opts)
       do_cleanup()
       log.clear_operation()
 
-      window.notify("Emissary error: " .. err_msg, vim.log.levels.ERROR)
+      window.notify("Legion error: " .. err_msg, vim.log.levels.ERROR)
     end,
   })
 
@@ -347,7 +347,7 @@ function M.from_visual_selection(instruction)
   else
     -- Prompt for instruction
     window.capture_input({
-      title = "Emissary Instruction",
+      title = "Legion Instruction",
       callback = function(input)
         if input and #input > 0 then
           M.execute({

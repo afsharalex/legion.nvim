@@ -1,5 +1,5 @@
 --- Point and Range geometry for buffer positions
--- @module emissary.geo
+-- @module legion.geo
 --
 -- All positions are stored as 1-based row/col internally.
 -- Conversion methods handle Vim and Treesitter coordinate systems.

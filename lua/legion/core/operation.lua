@@ -1,8 +1,8 @@
 --- Operation class - represents one highlighted block being processed
--- @module emissary.core.operation
+-- @module legion.core.operation
 
-local id_gen = require("emissary.core.id")
-local state = require("emissary.state")
+local id_gen = require("legion.core.id")
+local state = require("legion.state")
 
 local M = {}
 M.__index = M

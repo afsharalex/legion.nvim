@@ -1,8 +1,8 @@
 --- Wrapper around claude_agent_sdk
--- @module emissary.sdk.provider
+-- @module legion.sdk.provider
 
-local config = require("emissary.config")
-local log = require("emissary.log")
+local config = require("legion.config")
+local log = require("legion.log")
 
 local M = {}
 

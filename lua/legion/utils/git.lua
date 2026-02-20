@@ -1,5 +1,5 @@
 --- Git utility functions
--- @module emissary.utils.git
+-- @module legion.utils.git
 
 local M = {}
 

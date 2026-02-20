@@ -1,4 +1,4 @@
-# Emissary - Claude Code Context
+# Legion - Claude Code Context
 
 ## Project Overview
 
@@ -7,7 +7,7 @@ Neovim plugin for AI-powered code editing via Claude Code CLI. Allows developers
 ## Architecture
 
 ```
-lua/emissary/
+lua/legion/
 ├── init.lua              # Plugin entry, setup, keymaps
 ├── config.lua            # Configuration management
 ├── state.lua             # Global operation state tracking
@@ -42,7 +42,7 @@ lua/emissary/
 
 Operations use extmarks to track text ranges across buffer modifications:
 ```lua
-local marks = require("emissary.ops.marks")
+local marks = require("legion.ops.marks")
 op.marks = marks.mark_range(bufnr, range)
 -- Later, even after other edits:
 marks.replace_text(op.marks, new_text)
@@ -93,39 +93,39 @@ end)
 
 | File | Purpose |
 |------|---------|
-| `plugin/emissary.lua` | User command definitions for lazy.nvim detection |
-| `lua/emissary/init.lua` | Main entry point, setup function |
-| `lua/emissary/config.lua` | Default configuration and merging |
-| `lua/emissary/core/operation.lua` | Operation lifecycle management |
-| `lua/emissary/ops/marks.lua` | Extmark-based range tracking |
-| `lua/emissary/sdk/provider.lua` | Claude SDK wrapper |
-| `lua/emissary/prompt/builder.lua` | Prompt template construction |
+| `plugin/legion.lua` | User command definitions for lazy.nvim detection |
+| `lua/legion/init.lua` | Main entry point, setup function |
+| `lua/legion/config.lua` | Default configuration and merging |
+| `lua/legion/core/operation.lua` | Operation lifecycle management |
+| `lua/legion/ops/marks.lua` | Extmark-based range tracking |
+| `lua/legion/sdk/provider.lua` | Claude SDK wrapper |
+| `lua/legion/prompt/builder.lua` | Prompt template construction |
 
 ## Common Tasks
 
 ### Adding a New Operation
 
-1. Create `lua/emissary/ops/new_op.lua`
+1. Create `lua/legion/ops/new_op.lua`
 2. Use `Operation.new()` for state management
 3. Use `marks.mark_range()` for text tracking
 4. Use `provider.start_query()` for AI interaction
-5. Add command in `plugin/emissary.lua`
+5. Add command in `plugin/legion.lua`
 6. Add keymap in `init.lua:_setup_keymaps()`
 
 ### Modifying Prompts
 
-Edit `lua/emissary/prompt/builder.lua`. Each operation type has its own builder function.
+Edit `lua/legion/prompt/builder.lua`. Each operation type has its own builder function.
 
 ### Debugging
 
 Set log level to DEBUG in config:
 ```lua
-require("emissary").setup({
+require("legion").setup({
   log = { level = "DEBUG" }
 })
 ```
 
-Logs go to `~/.local/state/nvim/emissary.log`
+Logs go to `~/.local/state/nvim/legion.log`
 
 ## Testing
 

@@ -1,5 +1,5 @@
---- Emissary configuration defaults
--- @module emissary.config
+--- Legion configuration defaults
+-- @module legion.config
 
 local M = {}
 
@@ -46,7 +46,7 @@ M.defaults = {
   -- Logging settings
   log = {
     level = "INFO",  -- DEBUG, INFO, WARN, ERROR
-    file = nil,      -- nil = auto (~/.local/state/nvim/emissary.log)
+    file = nil,      -- nil = auto (~/.local/state/nvim/legion.log)
   },
 }
 

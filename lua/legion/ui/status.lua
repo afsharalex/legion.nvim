@@ -1,8 +1,8 @@
 --- Status display with spinner animation
--- @module emissary.ui.status
+-- @module legion.ui.status
 
-local state = require("emissary.state")
-local config = require("emissary.config")
+local state = require("legion.state")
+local config = require("legion.config")
 
 local M = {}
 
@@ -17,7 +17,7 @@ local SPINNER_FRAMES = {
 function M.create(operation)
   -- Determine if this is a multi-line selection at creation time
   -- (marks may shift during operation, so we capture this once)
-  local marks = require("emissary.ops.marks")
+  local marks = require("legion.ops.marks")
   local initial_range = marks.get_range_from_marks(operation.marks)
   local is_multi_line = initial_range and (initial_range.finish.row ~= initial_range.start.row)
 
@@ -82,8 +82,8 @@ function M.create(operation)
     self.extmark_id_start = vim.api.nvim_buf_set_extmark(operation.bufnr, nsid, start_line, 0, {
       id = self.extmark_id_start,
       virt_text = {
-        { status_text, "EmiStatus" },
-        { preview_text, "EmiPreview" },
+        { status_text, "LgnStatus" },
+        { preview_text, "LgnPreview" },
       },
       virt_text_pos = "eol",
     })
@@ -95,7 +95,7 @@ function M.create(operation)
     if self.show_end_indicator then
       self.extmark_id_end = vim.api.nvim_buf_set_extmark(operation.bufnr, nsid, end_line, 0, {
         id = self.extmark_id_end,
-        virt_text = {{ string.format(" %s", spinner), "EmiStatus" }},
+        virt_text = {{ string.format(" %s", spinner), "LgnStatus" }},
         virt_text_pos = "eol",
       })
     end
@@ -168,7 +168,7 @@ function M.create(operation)
     -- Show brief completion message
     local icon = success and "✓" or "✗"
     local msg = success and "Done" or "Failed"
-    local hl = success and "EmiStatusComplete" or "EmiStatusError"
+    local hl = success and "LgnStatusComplete" or "LgnStatusError"
 
     -- Start indicator with full message
     self.extmark_id_start = vim.api.nvim_buf_set_extmark(operation.bufnr, nsid, start_line, 0, {

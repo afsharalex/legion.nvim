@@ -1,6 +1,6 @@
-# Emissary Usage Guide
+# Legion Usage Guide
 
-Task-oriented guides for common Emissary workflows.
+Task-oriented guides for common Legion workflows.
 
 ## How to Replace Selected Code with AI
 
@@ -57,7 +57,7 @@ Task-oriented guides for common Emissary workflows.
 **Custom tag patterns:**
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   tag_scan = {
     pattern = "@ai%s+(.+)",  -- Use @ai instead of @llm
   },
@@ -68,7 +68,7 @@ require("emissary").setup({
 
 **Cancel all operations:**
 
-Press `<leader>ax` or run `:EmiCancel`
+Press `<leader>ax` or run `:LgnCancel`
 
 **Cancel specific operation:**
 
@@ -79,7 +79,7 @@ Currently, cancellation applies to all active operations.
 **Change default keymaps:**
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   keymaps = {
     visual = "<leader>cr",        -- Change to <leader>cr
     visual_prompt = "<leader>cp",
@@ -94,7 +94,7 @@ require("emissary").setup({
 **Disable specific keymaps:**
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   keymaps = {
     visual = "<leader>ar",
     visual_prompt = false,  -- Disable this keymap
@@ -111,7 +111,7 @@ require("emissary").setup({
 **Full file context (default):**
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   full_file_context = true,
 })
 ```
@@ -121,7 +121,7 @@ AI sees the entire file for better understanding.
 **Selection only:**
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   full_file_context = false,
 })
 ```
@@ -131,7 +131,7 @@ Faster, but AI has less context.
 ## How to Adjust Timeouts
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   timeout = 120,  -- 2 minutes
   -- timeout = 0,  -- No timeout
 })
@@ -142,7 +142,7 @@ require("emissary").setup({
 **Enable debug logging:**
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   log = {
     level = "DEBUG",
   },
@@ -152,19 +152,19 @@ require("emissary").setup({
 **View logs:**
 
 ```bash
-tail -f ~/.local/state/nvim/emissary.log
+tail -f ~/.local/state/nvim/legion.log
 ```
 
 **Check SDK availability:**
 
 ```vim
-:lua print(require("emissary").is_available())
+:lua print(require("legion").is_available())
 ```
 
 **Check operation count:**
 
 ```vim
-:lua print(require("emissary").operation_count())
+:lua print(require("legion").operation_count())
 ```
 
 ## How to Use Commands Directly
@@ -173,18 +173,18 @@ All operations are available as commands:
 
 | Command | Usage |
 |---------|-------|
-| `:EmiVisual <instruction>` | Replace selection with instruction |
-| `:EmiVisualPrompt` | Replace with floating prompt |
-| `:[count]EmiLine <instruction>` | Edit current line(s) |
-| `:EmiImplement` | Implement selected stub |
-| `:EmiScan` | Process all @llm tags |
-| `:EmiCancel` | Cancel all operations |
-| `:EmiStatus` | Show active operations |
+| `:LgnVisual <instruction>` | Replace selection with instruction |
+| `:LgnVisualPrompt` | Replace with floating prompt |
+| `:[count]LgnLine <instruction>` | Edit current line(s) |
+| `:LgnImplement` | Implement selected stub |
+| `:LgnScan` | Process all @llm tags |
+| `:LgnCancel` | Cancel all operations |
+| `:LgnStatus` | Show active operations |
 
 **Example:**
 
 ```vim
-:'<,'>EmiVisual add error handling
+:'<,'>LgnVisual add error handling
 ```
 
 ## How to Handle Errors
@@ -194,7 +194,7 @@ All operations are available as commands:
 Ensure `claude-agent-sdk-lua` is installed and in your runtimepath.
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   sdk_path = "/path/to/claude-agent-sdk-lua",
 })
 ```

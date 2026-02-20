@@ -1,10 +1,10 @@
 --- Resource cleanup utilities
--- @module emissary.ops.cleanup
+-- @module legion.ops.cleanup
 
-local marks = require("emissary.ops.marks")
-local state = require("emissary.state")
-local config = require("emissary.config")
-local log = require("emissary.log")
+local marks = require("legion.ops.marks")
+local state = require("legion.state")
+local config = require("legion.config")
+local log = require("legion.log")
 
 local M = {}
 

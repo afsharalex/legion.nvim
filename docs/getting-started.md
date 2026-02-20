@@ -1,6 +1,6 @@
-# Getting Started with Emissary
+# Getting Started with Legion
 
-This tutorial teaches you the basics of Emissary through hands-on exercises. By the end, you'll know how to use AI to edit code directly in Neovim.
+This tutorial teaches you the basics of Legion through hands-on exercises. By the end, you'll know how to use AI to edit code directly in Neovim.
 
 ## Prerequisites
 
@@ -12,18 +12,18 @@ Before starting, ensure you have:
 
 ## Installation
 
-Add Emissary to your Neovim configuration.
+Add Legion to your Neovim configuration.
 
 **With lazy.nvim:**
 
 ```lua
 {
-  "afsharalex/emissary",
+  "afsharalex/legion.nvim",
   dependencies = {
     "afsharalex/claude-agent-sdk-lua",
   },
   config = function()
-    require("emissary").setup()
+    require("legion").setup()
   end,
 }
 ```
@@ -142,7 +142,7 @@ Press `<leader>ax` (leader + a + x) to cancel all active operations.
 
 To see what operations are currently running:
 
-Run `:EmiStatus`
+Run `:LgnStatus`
 
 ## Next Steps
 

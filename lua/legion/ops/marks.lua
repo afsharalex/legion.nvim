@@ -1,11 +1,11 @@
 --- Extmark utilities for range tracking
--- @module emissary.ops.marks
+-- @module legion.ops.marks
 --
 -- Uses Neovim extmarks with proper gravity settings to track
 -- text ranges even as the buffer is edited.
 
-local state = require("emissary.state")
-local geo = require("emissary.geo")
+local state = require("legion.state")
+local geo = require("legion.geo")
 
 local M = {}
 

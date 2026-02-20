@@ -1,19 +1,19 @@
 --- Docstring tag scanning operation
--- @module emissary.ops.tag_scan
+-- @module legion.ops.tag_scan
 --
 -- Scan for @llm tags in docstrings and implement tagged elements
 
-local Operation = require("emissary.core.operation")
-local geo = require("emissary.geo")
-local marks = require("emissary.ops.marks")
-local cleanup = require("emissary.ops.cleanup")
-local provider = require("emissary.sdk.provider")
-local builder = require("emissary.prompt.builder")
-local status = require("emissary.ui.status")
-local window = require("emissary.ui.window")
-local log = require("emissary.log")
-local config = require("emissary.config")
-local git = require("emissary.utils.git")
+local Operation = require("legion.core.operation")
+local geo = require("legion.geo")
+local marks = require("legion.ops.marks")
+local cleanup = require("legion.ops.cleanup")
+local provider = require("legion.sdk.provider")
+local builder = require("legion.prompt.builder")
+local status = require("legion.ui.status")
+local window = require("legion.ui.window")
+local log = require("legion.log")
+local config = require("legion.config")
+local git = require("legion.utils.git")
 
 local M = {}
 
@@ -377,7 +377,7 @@ function M.execute_single(opts)
       do_cleanup()
       log.clear_operation()
 
-      window.notify("Emissary error: " .. err_msg, vim.log.levels.ERROR)
+      window.notify("Legion error: " .. err_msg, vim.log.levels.ERROR)
     end,
   })
 
@@ -419,11 +419,11 @@ function M.execute_all(bufnr)
   local tags = M.scan_buffer(bufnr)
 
   if #tags == 0 then
-    window.notify("Emissary: No @llm tags found in buffer", vim.log.levels.INFO)
+    window.notify("Legion: No @llm tags found in buffer", vim.log.levels.INFO)
     return
   end
 
-  window.notify(string.format("Emissary: Found %d @llm tag(s), implementing...", #tags), vim.log.levels.INFO)
+  window.notify(string.format("Legion: Found %d @llm tag(s), implementing...", #tags), vim.log.levels.INFO)
 
   -- Process tags from bottom to top to avoid range invalidation
   -- (replacing earlier text would shift line numbers for later tags)

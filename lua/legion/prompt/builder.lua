@@ -1,5 +1,5 @@
 --- Build prompts with context
--- @module emissary.prompt.builder
+-- @module legion.prompt.builder
 
 local M = {}
 

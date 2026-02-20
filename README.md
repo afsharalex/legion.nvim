@@ -1,4 +1,4 @@
-# Emissary
+# Legion
 
 AI-powered code editing for Neovim using Claude Code.
 
@@ -16,20 +16,20 @@ If you use OpenCode, check out [99](https://github.com/ThePrimeagen/99) instead.
 ## Quick Start
 
 1. Install with your package manager
-2. Add to config: `require("emissary").setup()`
+2. Add to config: `require("legion").setup()`
 3. Select code, press `<leader>ar`, type instruction
 
 ## Commands
 
 | Command | Keymap | Description |
 |---------|--------|-------------|
-| `EmiVisual` | `<leader>ar` | Replace selection with AI |
-| `EmiVisualPrompt` | `<leader>ap` | Replace with floating prompt |
-| `EmiLine` | `<leader>al` | Edit current line(s) |
-| `EmiImplement` | `<leader>ai` | Implement function stub |
-| `EmiScan` | `<leader>as` | Process all `@llm` tags |
-| `EmiCancel` | `<leader>ax` | Cancel operations |
-| `EmiStatus` | - | Show operation status |
+| `LgnVisual` | `<leader>ar` | Replace selection with AI |
+| `LgnVisualPrompt` | `<leader>ap` | Replace with floating prompt |
+| `LgnLine` | `<leader>al` | Edit current line(s) |
+| `LgnImplement` | `<leader>ai` | Implement function stub |
+| `LgnScan` | `<leader>as` | Process all `@llm` tags |
+| `LgnCancel` | `<leader>ax` | Cancel operations |
+| `LgnStatus` | - | Show operation status |
 
 ## Requirements
 
@@ -43,12 +43,12 @@ If you use OpenCode, check out [99](https://github.com/ThePrimeagen/99) instead.
 
 ```lua
 {
-  "afsharalex/emissary",
+  "afsharalex/legion.nvim",
   dependencies = {
     "afsharalex/claude-agent-sdk-lua",
   },
   config = function()
-    require("emissary").setup()
+    require("legion").setup()
   end,
 }
 ```
@@ -57,10 +57,10 @@ If you use OpenCode, check out [99](https://github.com/ThePrimeagen/99) instead.
 
 ```lua
 use {
-  "afsharalex/emissary",
+  "afsharalex/legion.nvim",
   requires = { "afsharalex/claude-agent-sdk-lua" },
   config = function()
-    require("emissary").setup()
+    require("legion").setup()
   end,
 }
 ```
@@ -68,7 +68,7 @@ use {
 ## Configuration
 
 ```lua
-require("emissary").setup({
+require("legion").setup({
   -- SDK settings
   permission_mode = "acceptEdits",
   max_turns = 10,
@@ -103,7 +103,7 @@ require("emissary").setup({
   -- Logging
   log = {
     level = "INFO",  -- DEBUG, INFO, WARN, ERROR
-    file = nil,      -- nil = ~/.local/state/nvim/emissary.log
+    file = nil,      -- nil = ~/.local/state/nvim/legion.log
   },
 })
 ```
