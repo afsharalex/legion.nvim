@@ -1,5 +1,9 @@
 # Legion
 
+<p align="center">
+  <img src="assets/LegionNvimLogo.png" alt="Legion.nvim Logo" width="400" />
+</p>
+
 AI-powered code editing for Neovim using Claude Code.
 
 If you use OpenCode, check out [99](https://github.com/ThePrimeagen/99) instead.
